@@ -1,0 +1,55 @@
+{
+  "capabilities": [
+    { "kind": "terminal:send" },
+    { "kind": "workspace:read" },
+    { "kind": "storage" },
+    { "kind": "events:subscribe" }
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "context": "worktree",
+        "id": "route-launch",
+        "title": "Harness: Route im Terminal starten (Prio 1)"
+      },
+      {
+        "context": "worktree",
+        "id": "route-next",
+        "title": "Harness: Nächstes Modell starten (Fallback / Handoff)"
+      },
+      {
+        "context": "worktree",
+        "id": "agents-sync",
+        "title": "Harness: AGENTS.md spiegeln"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "route-launch",
+        "key": "Cmd+Alt+R",
+        "when": "worktree"
+      },
+      {
+        "command": "route-next",
+        "key": "Cmd+Alt+N",
+        "when": "worktree"
+      }
+    ],
+    "events": [
+      {
+        "on": "worktree.created"
+      }
+    ]
+  },
+  "description": "Startet automatisch oder per Cmd+Alt+R die Prio-1-Route aus ~/.harness-dispatch/config.yaml im ersten Terminal des aktiven Worktrees. Cmd+Alt+N schaltet mit /compact auf das nächste Modell um.",
+  "engines": {
+    "orca": ">=1.4.0"
+  },
+  "id": "harness-route",
+  "main": "main.mjs",
+  "manifestVersion": 1,
+  "name": "Harness Route",
+  "pluginApi": 1,
+  "publisher": "ysamjo",
+  "version": "1.1.0"
+}
