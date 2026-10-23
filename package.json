@@ -1,0 +1,11 @@
+{
+  "name": "orca-plugin-harness-route",
+  "version": "1.1.0",
+  "description": "Startet die Prio-1-Route aus ~/.harness-dispatch/config.yaml in Orca und bietet Kontext-Fallback",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/route.test.mjs"
+  },
+  "author": "ysamjo",
+  "license": "MIT"
+}
