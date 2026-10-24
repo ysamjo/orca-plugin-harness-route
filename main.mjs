@@ -166,6 +166,54 @@ export async function starteErsteRoute(orca, options = {}) {
   return starteRouteImTerminal(orca, route, options);
 }
 
+export async function starteRouteImSplit(orca, route, options = {}) {
+  const befehl = await ermittleStartBefehl(route);
+  return new Promise((resolve, reject) => {
+    execFile('orca', ['terminal', 'split', '--direction', 'vertical', '--json'], { timeout: 5000 }, async (err, stdout, stderr) => {
+      if (err) {
+        // Fallback: Falls Split nicht moeglich ist, normales Terminal nutzen
+        try {
+          const res = await starteRouteImTerminal(orca, route, options);
+          return resolve(res);
+        } catch (fbErr) {
+          return reject(new Error(`Split fehlgeschlagen: ${stderr || err.message}; Fallback: ${fbErr.message}`));
+        }
+      }
+      try {
+        const splitRes = JSON.parse(stdout);
+        const handle = splitRes?.result?.split?.handle;
+        if (!handle) {
+          throw new Error('Kein Terminal-Handle nach Split erhalten');
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((res, rej) => {
+          execFile('orca', ['terminal', 'send', '--terminal', handle, '--text', befehl, '--enter'], { timeout: 3000 }, (sendErr) => {
+            if (sendErr) return rej(sendErr);
+            res();
+          });
+        });
+        orca.log(`Route ${route.name} (${route.harnessId}) in neuem Splitscreen gestartet: ${befehl}`);
+        resolve({ route: route.name, befehl, handle, split: true });
+      } catch (parseErr) {
+        reject(parseErr);
+      }
+    });
+  });
+}
+
+export async function starteErsteRouteImSplit(orca, options = {}) {
+  const kette = parseKette(await readFile(KETTEN_PFAD, 'utf8'));
+  if (kette.length === 0) throw new Error('Keine aktive Route in config.yaml');
+  const umgebung = {
+    ...process.env,
+    PATH: `${join(homedir(), '.local', 'bin')}:/opt/homebrew/bin:/usr/local/bin:${process.env.PATH ?? '/usr/bin:/bin'}`
+  };
+  const treffer = await Promise.all(kette.map((route) => pruefeBin(STARTBEFEHL[route.harnessId], umgebung)));
+  const route = kette[treffer.findIndex(Boolean)];
+  if (!route) throw new Error('Keine Route verfuegbar (kein CLI auf PATH)');
+  return starteRouteImSplit(orca, route, options);
+}
+
 export async function wechsleAufNaechstesModell(orca, vorherigesHarnessId = null) {
   const kette = parseKette(await readFile(KETTEN_PFAD, 'utf8'));
   if (kette.length === 0) throw new Error('Keine aktive Route in config.yaml');
@@ -196,6 +244,10 @@ export default function activate(orca) {
 
   orca.commands.register('route-launch', async () => {
     return starteErsteRoute(orca);
+  });
+
+  orca.commands.register('route-launch-split', async () => {
+    return starteErsteRouteImSplit(orca);
   });
 
   orca.commands.register('route-next', async () => {
