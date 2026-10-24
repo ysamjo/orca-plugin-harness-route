@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
-import { baueBefehl, baueSpiegel, findeNaechsteRoute, liesOrcaArgs, parseKette, spiegle } from '../main.mjs';
+import { baueBefehl, baueSpiegel, findeNaechsteRoute, liesOrcaArgs, parseKette, spiegle, starteRouteImSplit, starteErsteRouteImSplit } from '../main.mjs';
 
 const KETTE = `clis:
   - name: codex_cli
@@ -67,7 +67,7 @@ test('Befehl: unsicher wird abgewiesen', () => {
 test('liesOrcaArgs liest aus SQLite oder JSON', async () => {
   const args = await liesOrcaArgs('codebuddy');
   assert.ok(args !== null);
-  assert.match(args, /--dangerously-skip-permissions/);
+  assert.match(args, /deepseek/i);
 });
 
 test('Spiegel: beide Quellen mit Markierung', () => {
@@ -102,4 +102,9 @@ test('Spiegel: schreibt nur bei Aenderung', async () => {
   const r2 = await spiegle(orca, [ziel]);
   assert.equal(r2.geschrieben.length, 0);
   assert.equal(r2.uebersprungen, 1);
+});
+
+test('Split-Funktionen sind exportiert und aufrufbar', () => {
+  assert.equal(typeof starteRouteImSplit, 'function');
+  assert.equal(typeof starteErsteRouteImSplit, 'function');
 });
