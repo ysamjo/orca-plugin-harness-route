@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
-import { baueBefehl, baueSpiegel, findeNaechsteRoute, liesOrcaArgs, parseKette, spiegle, starteRouteImSplit, starteErsteRouteImSplit } from '../main.mjs';
+import { baueBefehl, baueSpiegel, ermittleErsteRoute, findeNaechsteRoute, liesOrcaArgs, parseKette, spiegle, starteRouteImSplit, starteErsteRouteImSplit, starteErsteRouteAufMain } from '../main.mjs';
 
 const KETTE = `clis:
   - name: codex_cli
@@ -107,4 +107,6 @@ test('Spiegel: schreibt nur bei Aenderung', async () => {
 test('Split-Funktionen sind exportiert und aufrufbar', () => {
   assert.equal(typeof starteRouteImSplit, 'function');
   assert.equal(typeof starteErsteRouteImSplit, 'function');
+  assert.equal(typeof starteErsteRouteAufMain, 'function');
+  assert.equal(typeof ermittleErsteRoute, 'function');
 });

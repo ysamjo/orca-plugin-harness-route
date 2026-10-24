@@ -153,7 +153,7 @@ export async function starteRouteImTerminal(orca, route, options = {}) {
   return { route: route.name, befehl, terminalId, angenommen: ergebnis?.accepted ?? null };
 }
 
-export async function starteErsteRoute(orca, options = {}) {
+export async function ermittleErsteRoute() {
   const kette = parseKette(await readFile(KETTEN_PFAD, 'utf8'));
   if (kette.length === 0) throw new Error('Keine aktive Route in config.yaml');
   const umgebung = {
@@ -163,6 +163,11 @@ export async function starteErsteRoute(orca, options = {}) {
   const treffer = await Promise.all(kette.map((route) => pruefeBin(STARTBEFEHL[route.harnessId], umgebung)));
   const route = kette[treffer.findIndex(Boolean)];
   if (!route) throw new Error('Keine Route verfuegbar (kein CLI auf PATH)');
+  return route;
+}
+
+export async function starteErsteRoute(orca, options = {}) {
+  const route = await ermittleErsteRoute();
   return starteRouteImTerminal(orca, route, options);
 }
 
@@ -202,16 +207,40 @@ export async function starteRouteImSplit(orca, route, options = {}) {
 }
 
 export async function starteErsteRouteImSplit(orca, options = {}) {
-  const kette = parseKette(await readFile(KETTEN_PFAD, 'utf8'));
-  if (kette.length === 0) throw new Error('Keine aktive Route in config.yaml');
-  const umgebung = {
-    ...process.env,
-    PATH: `${join(homedir(), '.local', 'bin')}:/opt/homebrew/bin:/usr/local/bin:${process.env.PATH ?? '/usr/bin:/bin'}`
-  };
-  const treffer = await Promise.all(kette.map((route) => pruefeBin(STARTBEFEHL[route.harnessId], umgebung)));
-  const route = kette[treffer.findIndex(Boolean)];
-  if (!route) throw new Error('Keine Route verfuegbar (kein CLI auf PATH)');
+  const route = await ermittleErsteRoute();
   return starteRouteImSplit(orca, route, options);
+}
+
+export async function starteErsteRouteAufMain(orca, options = {}) {
+  const route = await ermittleErsteRoute();
+  const befehl = await ermittleStartBefehl(route);
+  return new Promise((resolve) => {
+    execFile('orca', ['worktree', 'list', '--json'], { timeout: 5000 }, async (err, stdout) => {
+      if (err) {
+        return resolve(starteRouteImSplit(orca, route, options));
+      }
+      try {
+        const data = JSON.parse(stdout);
+        const worktrees = data?.result?.worktrees ?? [];
+        const kontext = await orca.host.call('workspace.readContext').catch(() => null);
+        const repoId = kontext?.repoId;
+        const mainWorktree = worktrees.find((w) => (repoId ? w.repoId === repoId : true) && w.isMainWorktree);
+        if (mainWorktree) {
+          execFile('orca', ['terminal', 'split', '--direction', 'vertical', '--command', befehl], { timeout: 5000 }, (splitErr) => {
+            if (splitErr) {
+              return resolve(starteRouteImSplit(orca, route, options));
+            }
+            orca.log(`Prio-1-Route ${route.name} auf main (${mainWorktree.path}) gestartet: ${befehl}`);
+            resolve({ route: route.name, befehl, worktree: mainWorktree.displayName, main: true });
+          });
+        } else {
+          resolve(starteRouteImSplit(orca, route, options));
+        }
+      } catch {
+        resolve(starteRouteImSplit(orca, route, options));
+      }
+    });
+  });
 }
 
 export async function wechsleAufNaechstesModell(orca, vorherigesHarnessId = null) {
@@ -248,6 +277,10 @@ export default function activate(orca) {
 
   orca.commands.register('route-launch-split', async () => {
     return starteErsteRouteImSplit(orca);
+  });
+
+  orca.commands.register('route-launch-main', async () => {
+    return starteErsteRouteAufMain(orca);
   });
 
   orca.commands.register('route-next', async () => {
