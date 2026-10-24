@@ -19,6 +19,11 @@
       },
       {
         "context": "worktree",
+        "id": "route-launch-main",
+        "title": "Harness: Route auf main starten (Prio 1)"
+      },
+      {
+        "context": "worktree",
         "id": "route-next",
         "title": "Harness: Nächstes Modell starten (Fallback / Handoff)"
       },
@@ -40,6 +45,11 @@
         "when": "worktree"
       },
       {
+        "command": "route-launch-main",
+        "key": "Cmd+Alt+M",
+        "when": "worktree"
+      },
+      {
         "command": "route-next",
         "key": "Cmd+Alt+N",
         "when": "worktree"
@@ -51,7 +61,7 @@
       }
     ]
   },
-  "description": "Startet automatisch oder per Cmd+Alt+R die Prio-1-Route aus ~/.harness-dispatch/config.yaml im ersten Terminal des aktiven Worktrees. Cmd+Alt+S startet im vertikalen Splitscreen. Cmd+Alt+N schaltet mit /compact auf das nächste Modell um.",
+  "description": "Startet automatisch oder per Cmd+Alt+R die Prio-1-Route im ersten Terminal des aktiven Worktrees. Cmd+Alt+S startet im Splitscreen, Cmd+Alt+M startet direkt auf main. Cmd+Alt+N schaltet mit /compact auf das nächste Modell um.",
   "engines": {
     "orca": ">=1.4.0"
   },
@@ -61,5 +71,5 @@
   "name": "Harness Route",
   "pluginApi": 1,
   "publisher": "ysamjo",
-  "version": "1.2.0"
+  "version": "1.3.0"
 }
